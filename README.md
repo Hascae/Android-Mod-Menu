@@ -34,6 +34,8 @@ Thanks to the following individuals whose code helped me develop this mod menu
 # License
 **GNU General Public License 3**
 
+Bundled third-party components keep their own licenses. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
 # Disclaimer
 This project is for Educational Use only. We do not condone this project being used to gain an advantage against other people. This project was made for fun. If you are using this project for modding/hacking PU*G, C*DM, and any other Tencent games, we ask you to STOP immediately!
 
