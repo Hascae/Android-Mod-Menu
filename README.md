@@ -4,7 +4,7 @@
 
 Floating mod menu for il2cpp and other native android games. KittyMemory, Dobby, xDL and basic string obfuscator (AY obfuscator) included. Assets are stored as base64 in cpp and does not need to be stored under assets folder.
 
-Support Android 4.4.x up to Android 16. ARMv7 and ARM64 are supported.
+Support Android 5.0 up to Android 16. ARMv7 and ARM64 are supported.
 
 ![](Intro.gif)
 
