@@ -29,6 +29,7 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -357,8 +358,8 @@ public class Menu {
                 -3);
         //params = new WindowManager.LayoutParams(WindowManager.LayoutParams.LAST_APPLICATION_WINDOW, 8, -3);
         vmParams.gravity = 51;
-        vmParams.x = POS_X;
-        vmParams.y = POS_Y;
+        vmParams.x = Preferences.with(getContext).readInt("menu_pos_x", POS_X);
+        vmParams.y = Preferences.with(getContext).readInt("menu_pos_y", POS_Y);
 
         mWindowManager = (WindowManager) getContext.getSystemService(Context.WINDOW_SERVICE);
         mWindowManager.addView(rootFrame, vmParams);
@@ -381,8 +382,8 @@ public class Menu {
                 PixelFormat.TRANSPARENT
         );
         vmParams.gravity = 51;
-        vmParams.x = POS_X;
-        vmParams.y = POS_Y;
+        vmParams.x = Preferences.with(getContext).readInt("menu_pos_x", POS_X);
+        vmParams.y = Preferences.with(getContext).readInt("menu_pos_y", POS_Y);
 
         mWindowManager = ((Activity) getContext).getWindowManager();
         mWindowManager.addView(rootFrame, vmParams);
@@ -392,8 +393,10 @@ public class Menu {
         return new View.OnTouchListener() {
             final View collapsedView = mCollapsed;
             final View expandedView = mExpanded;
+            final int touchSlop = ViewConfiguration.get(getContext).getScaledTouchSlop();
             private float initialTouchX, initialTouchY;
             private int initialX, initialY;
+            private boolean dragging;
 
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 switch (motionEvent.getAction()) {
@@ -402,15 +405,34 @@ public class Menu {
                         initialY = vmParams.y;
                         initialTouchX = motionEvent.getRawX();
                         initialTouchY = motionEvent.getRawY();
+                        dragging = false;
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        int dx = (int) (motionEvent.getRawX() - initialTouchX);
+                        int dy = (int) (motionEvent.getRawY() - initialTouchY);
+                        //Stay a click until the finger leaves the tap zone. The old code compared
+                        //the raw delta with 10 without taking the absolute value, so dragging left
+                        //or up (negative delta) was always read as a click.
+                        if (!dragging && Math.abs(dx) <= touchSlop && Math.abs(dy) <= touchSlop) {
+                            return true;
+                        }
+                        dragging = true;
+                        mExpanded.setAlpha(0.5f);
+                        mCollapsed.setAlpha(0.5f);
+                        //Calculate the X and Y coordinates of the view.
+                        vmParams.x = initialX + dx;
+                        vmParams.y = initialY + dy;
+                        //Update the layout with new X & Y coordinate
+                        mWindowManager.updateViewLayout(rootFrame, vmParams);
                         return true;
                     case MotionEvent.ACTION_UP:
-                        int rawX = (int) (motionEvent.getRawX() - initialTouchX);
-                        int rawY = (int) (motionEvent.getRawY() - initialTouchY);
                         mExpanded.setAlpha(1f);
                         mCollapsed.setAlpha(1f);
-                        //The check for Xdiff <10 && YDiff< 10 because sometime elements moves a little while clicking.
-                        //So that is click event.
-                        if (rawX < 10 && rawY < 10 && isViewCollapsed()) {
+                        if (dragging) {
+                            //Remember where the menu was dropped so it comes back there next time.
+                            Preferences.with(getContext).writeInt("menu_pos_x", vmParams.x);
+                            Preferences.with(getContext).writeInt("menu_pos_y", vmParams.y);
+                        } else if (isViewCollapsed()) {
                             //When user clicks on the image view of the collapsed layout,
                             //visibility of the collapsed layout will be changed to "View.GONE"
                             //and expanded view will become visible.
@@ -420,15 +442,6 @@ public class Menu {
                             } catch (NullPointerException ignored) {
                             }
                         }
-                        return true;
-                    case MotionEvent.ACTION_MOVE:
-                        mExpanded.setAlpha(0.5f);
-                        mCollapsed.setAlpha(0.5f);
-                        //Calculate the X and Y coordinates of the view.
-                        vmParams.x = initialX + ((int) (motionEvent.getRawX() - initialTouchX));
-                        vmParams.y = initialY + ((int) (motionEvent.getRawY() - initialTouchY));
-                        //Update the layout with new X & Y coordinate
-                        mWindowManager.updateViewLayout(rootFrame, vmParams);
                         return true;
                     default:
                         return false;
