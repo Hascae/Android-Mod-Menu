@@ -6,19 +6,24 @@
 #include "KittyMemory/KittyInclude.hpp"
 #include "KittyMemory/Deps/Keystone/includes/keystone.h"
 #include "Dobby/dobby.h"
+#include <mutex>
 
 #if defined(__aarch64__)
-int MP_ASM = 1;
+inline int MP_ASM = 1;
 #else
-int MP_ASM = 0;
+inline int MP_ASM = 0;
 #endif
+
+//These live in a header that gets included into a translation unit, so they must
+//be inline to stay ODR-safe if the header is ever pulled into a second .cpp.
+inline std::mutex patch_mutex;
 
 /// dobby hook (offset || sym)
 #define HOOK(lib, off_sym, ptr, orig) DobbyHookWrapper(lib, OBFUSCATE(off_sym), (void*)(ptr), (void**)&(orig))
 /// dobby hook (offset || sym) without original
 #define HOOK_NO_ORIG(lib, off_sym, ptr) DobbyHookWrapper(lib, OBFUSCATE(off_sym), (void*)(ptr), nullptr)
 
-void DobbyHookWrapper(const char *lib, const char *relative, void* hook_function, void** original_function) {
+inline void DobbyHookWrapper(const char *lib, const char *relative, void* hook_function, void** original_function) {
     void *abs = getAbsoluteAddress(lib, relative);
     // LOGI(OBFUSCATE("Off: 0x%llx, Addr: 0x%llx"), offset, (uintptr_t) abs);
 
@@ -38,13 +43,13 @@ void DobbyHookWrapper(const char *lib, const char *relative, void* hook_function
 /// (offset || sym) you can use dobby instrument for logging, counting function calls, executing side code before the function is executed
 #define INST(lib, off_sym, name, boolean) DobbyInstrumentWrapper(lib, OBFUSCATE(off_sym), OBFUSCATE(name), boolean)
 
-std::map<void*, const char*> detecting_functions;
-void Detector(void *address, DobbyRegisterContext *ctx) {
+inline std::map<void*, const char*> detecting_functions;
+inline void Detector(void *address, DobbyRegisterContext *ctx) {
     if(detecting_functions.count(address)) LOGW(OBFUSCATE("()0_0) %s >>>>>>>>>>>>> execute detected"), detecting_functions[address]);
 }
 
 /// an example of a wrapper with a function for detecting execution
-void DobbyInstrumentWrapper(const char *lib, const char *relative, const char *name, bool apply) {
+inline void DobbyInstrumentWrapper(const char *lib, const char *relative, const char *name, bool apply) {
     void *abs = getAbsoluteAddress(lib, relative);
     if(detecting_functions.count(abs)) {
         if(!apply) {
@@ -81,9 +86,10 @@ struct DobbyPatchInfo {
     bool applied{};
 };
 
-std::map<std::string, DobbyPatchInfo> pExpress;
+inline std::map<std::string, DobbyPatchInfo> pExpress;
 /// Dobby-Kitty patch implementation
-void DobbyPatchWrapper(const char *libName, const char *relative, std::string data, bool apply) {
+inline void DobbyPatchWrapper(const char *libName, const char *relative, std::string data, bool apply) {
+    std::lock_guard<std::mutex> lock(patch_mutex);
     std::string key = relative;
     auto it = pExpress.find(key);
     void* abs = nullptr;
@@ -241,7 +247,7 @@ void KittyPatchWrapper(const char *libName, const char *relative, std::string da
 */
 
 /// Relative patches allow you to speed up patch creation if you are sure that the offsets within methods rarely change
-void PatchRelativeOffset(const char *libName, const char *rootOffset, const char *addOffset, std::string data, bool apply) {
+inline void PatchRelativeOffset(const char *libName, const char *rootOffset, const char *addOffset, std::string data, bool apply) {
     DobbyPatchWrapper(libName, (char *) getRelativeAddress(libName, rootOffset, addOffset), std::move(data), apply);
     // KittyPatchWrapper(libName, (char *) getRelativeAddress(libName, rootOffset, addOffset), std::move(data), apply);
 }
