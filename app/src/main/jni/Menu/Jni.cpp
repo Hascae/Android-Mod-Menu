@@ -119,7 +119,6 @@ void CheckOverlayPermission(JNIEnv *env, jclass thiz, jobject ctx){
         jmethodID canDraw =env->GetStaticMethodID(Settings, OBFUSCATE("canDrawOverlays"), OBFUSCATE("(Landroid/content/Context;)Z"));
         if (!env->CallStaticBooleanMethod(Settings, canDraw, ctx)){
             Toast(env,ctx,OBFUSCATE("Overlay permission is required in order to show mod menu."),1);
-            Toast(env,ctx,OBFUSCATE("Overlay permission is required in order to show mod menu."),1);
             startActivityPermisson(env, ctx);
 
             pthread_t ptid;

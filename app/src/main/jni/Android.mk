@@ -15,7 +15,7 @@ LOCAL_SRC_FILES := Dobby/${TARGET_ARCH_ABI}/libdobby.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 # Here is the name of your lib.
-# When you change the lib name, change also on System.loadLibrary("") under OnCreate method on StaticActivity.java
+# When you change the lib name, change also on System.loadLibrary("") in Main.java
 # Both must have same name
 include $(CLEAR_VARS)
 LOCAL_MODULE    := MyLibName

@@ -1,13 +1,18 @@
 #include "obfuscate.h"
 #include "Utils.hpp"
+#include <atomic>
+#include <memory>
 
 std::map<std::string, uintptr_t> lib_links;
-bool mainLibLoaded = false;
+std::atomic<bool> mainLibLoaded{false};
 
 uintptr_t getLibraryAddress(const char *libraryName) {
     if (!lib_links.count(libraryName)) {
         xdl_info_t info;
         void *handle = xdl_open(libraryName, XDL_DEFAULT);
+        if (handle == nullptr) {
+            return 0;
+        }
         memset(&info, 0, sizeof(xdl_info_t));
         if (0 > xdl_info(handle, XDL_DI_DLINFO, &info)) {
             LOGI(OBFUSCATE(">>> xdl_info(XDL_DI_DLINFO, %llx" ") : FAILED"), (uintptr_t) handle);
@@ -83,18 +88,18 @@ jboolean isGameLibLoaded(JNIEnv *env, jobject thiz) {
 }
 
 bool isLibraryLoaded(const char *libraryName) {
+    std::unique_ptr<FILE, decltype(&fclose)> fp(
+            fopen(OBFUSCATE("/proc/self/maps"), OBFUSCATE("rt")), &fclose);
+    if (!fp) {
+        return false;
+    }
     char line[512] = {0};
-    FILE *fp = fopen(OBFUSCATE("/proc/self/maps"), OBFUSCATE("rt"));
-    if (fp != nullptr) {
-        while (fgets(line, sizeof(line), fp)) {
-            std::string a = line;
-            if (strstr(line, libraryName)) {
-                // LOGI(OBFUSCATE("main library (%s) loaded: 0x%llx"), libraryName, getLibraryAddress(libraryName));
-                mainLibLoaded = true;
-                return true;
-            }
+    while (fgets(line, sizeof(line), fp.get())) {
+        if (strstr(line, libraryName)) {
+            // LOGI(OBFUSCATE("main library (%s) loaded: 0x%llx"), libraryName, getLibraryAddress(libraryName));
+            mainLibLoaded = true;
+            return true;
         }
-        fclose(fp);
     }
     return false;
 }

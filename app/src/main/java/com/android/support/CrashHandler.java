@@ -26,6 +26,7 @@ public final class CrashHandler {
     private static final String LOG_DIR = "crash_logs";
     private static final String FILE_PREFIX = "crash_";
     private static final String FILE_EXTENSION = ".txt";
+    private static final int MAX_LOGS = 5;
     private static UncaughtExceptionHandler defaultHandler;
     private static Context appContext;
     final static boolean showToasts = true;
@@ -249,11 +250,11 @@ public final class CrashHandler {
         File[] logs = logDir.listFiles((dir, name) ->
                 name.startsWith(FILE_PREFIX) && name.endsWith(FILE_EXTENSION));
 
-        if (logs != null && logs.length > 5) {
+        if (logs != null && logs.length > MAX_LOGS) {
             Arrays.sort(logs, (f1, f2) ->
                     Long.compare(f2.lastModified(), f1.lastModified()));
 
-            for (int i = 10; i < logs.length; i++) {
+            for (int i = MAX_LOGS; i < logs.length; i++) {
                 if (!logs[i].delete()) {
                     Log.w(TAG, "Failed to delete old log: " + logs[i].getName());
                 }
