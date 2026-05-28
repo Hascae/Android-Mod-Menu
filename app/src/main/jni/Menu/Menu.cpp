@@ -11,7 +11,8 @@ void Init(JNIEnv *env, jobject thiz, jobject ctx, jobject title, jobject subtitl
                                      "https://github.com/LGLTeam | Lorem Ipsum is simply dummy text of the printing and typesetting</p>"
                                      "</marquee></b>"));
 
-    //Dialog Example
+    //Dialog Example - disabled. Uncomment to show a welcome dialog on launch.
+    /*
     Dialog(env,
            ctx,
            OBFUSCATE("Welcome to your mod menu"),
@@ -20,6 +21,7 @@ void Init(JNIEnv *env, jobject thiz, jobject ctx, jobject title, jobject subtitl
            OBFUSCATE("Close"),
            3, // set 0 if auto-close is not needed
            OBFUSCATE("https://github.com/LGLTeam")); // set nullptr if btn-link is not needed
+    */
 
     //Toast Example
     Toast(env, ctx, OBFUSCATE("Modded by YOU"), ToastLength::LENGTH_LONG);
