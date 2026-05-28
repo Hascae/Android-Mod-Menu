@@ -3,6 +3,7 @@
 #include <cstring>
 #include <pthread.h>
 #include <thread>
+#include <atomic>
 #include <cstring>
 #include <string>
 #include <jni.h>
@@ -18,7 +19,7 @@
 #include "Includes/Macros.h"
 #include "dobby.h"
 
-int scoreMul = 1, coinsMul = 1;
+std::atomic<int> scoreMul{1}, coinsMul{1};
 
 // Do not change or translate the first text unless you know what you are doing
 // Assigning feature numbers is optional. Without it, it will automatically count for you, starting from 0
@@ -89,7 +90,7 @@ jobjectArray GetFeatureList(JNIEnv *env, jobject context) {
     return (ret);
 }
 
-bool btnPressed = false;
+std::atomic<bool> btnPressed{false};
 
 //Target main lib here
 #define targetLibName OBFUSCATE("libil2cpp.so")
