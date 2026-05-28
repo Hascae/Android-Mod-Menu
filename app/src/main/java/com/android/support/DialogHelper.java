@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
@@ -38,6 +39,12 @@ public class DialogHelper {
             }
         });
 
+        //This dialog is shown from the Launcher service (an overlay context), so it needs an
+        //overlay window type. Without it show() throws a bad-token error, and because we're
+        //called over JNI that surfaces as a native abort instead of a catchable exception.
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setType(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? 2038 : 2002);
+        }
         dialog.show();
 
         if (sec > 0) startCountdown(dialog, CloseBtnTitle, sec);
