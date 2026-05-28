@@ -18,7 +18,9 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.Html;
+import android.text.Spanned;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -323,7 +325,7 @@ public class Menu {
     public void ShowMenu() {
         rootFrame.addView(mRootContainer);
 
-        final Handler handler = new Handler();
+        final Handler handler = new Handler(Looper.getMainLooper());
         handler.postDelayed(new Runnable() {
             boolean viewLoaded = false;
 
@@ -596,7 +598,7 @@ public class Menu {
         linearLayout.setGravity(Gravity.CENTER);
 
         final TextView textView = new TextView(getContext);
-        textView.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + ((loadedProg == 0) ? min : loadedProg)));
+        textView.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + ((loadedProg == 0) ? min : loadedProg)));
         textView.setTextColor(TEXT_COLOR_2);
 
         SeekBar seekBar = new SeekBar(getContext);
@@ -618,7 +620,7 @@ public class Menu {
                 //if progress is greater than minimum, don't go below. Else, set progress
                 seekBar.setProgress(i < min ? min : i);
                 Preferences.changeFeatureInt(featName, featNum, i < min ? min : i);
-                textView.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + (i < min ? min : i)));
+                textView.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + (i < min ? min : i)));
             }
         });
         linearLayout.addView(textView);
@@ -634,7 +636,7 @@ public class Menu {
         button.setLayoutParams(layoutParams);
         button.setTextColor(TEXT_COLOR_2);
         button.setAllCaps(false); //Disable caps to support html
-        button.setText(Html.fromHtml(featName));
+        button.setText(fromHtml(featName));
         button.setBackgroundColor(BTN_COLOR);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -662,7 +664,7 @@ public class Menu {
         button.setLayoutParams(layoutParams);
         button.setAllCaps(false); //Disable caps to support html
         button.setTextColor(TEXT_COLOR_2);
-        button.setText(Html.fromHtml(featName));
+        button.setText(fromHtml(featName));
         button.setBackgroundColor(BTN_COLOR);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -686,11 +688,11 @@ public class Menu {
         final String finalfeatName = featName.replace("OnOff_", "");
         boolean isOn = Preferences.loadPrefBool(featName, featNum, switchedOn);
         if (isOn) {
-            button.setText(Html.fromHtml(finalfeatName + ": ON"));
+            button.setText(fromHtml(finalfeatName + ": ON"));
             button.setBackgroundColor(BtnON);
             isOn = false;
         } else {
-            button.setText(Html.fromHtml(finalfeatName + ": OFF"));
+            button.setText(fromHtml(finalfeatName + ": OFF"));
             button.setBackgroundColor(BtnOFF);
             isOn = true;
         }
@@ -702,11 +704,11 @@ public class Menu {
                 Preferences.changeFeatureBool(finalfeatName, featNum, isOn);
                 //Log.d(TAG, finalfeatName + " " + featNum + " " + isActive2);
                 if (isOn) {
-                    button.setText(Html.fromHtml(finalfeatName + ": ON"));
+                    button.setText(fromHtml(finalfeatName + ": ON"));
                     button.setBackgroundColor(BtnON);
                     isOn = false;
                 } else {
-                    button.setText(Html.fromHtml(finalfeatName + ": OFF"));
+                    button.setText(fromHtml(finalfeatName + ": OFF"));
                     button.setBackgroundColor(BtnOFF);
                     isOn = true;
                 }
@@ -759,7 +761,7 @@ public class Menu {
 
         final Button button = new Button(getContext);
         int num = Preferences.loadPrefInt(featName, featNum);
-        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
+        button.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
         button.setAllCaps(false);
         button.setLayoutParams(layoutParams);
         button.setBackgroundColor(BTN_COLOR);
@@ -811,7 +813,7 @@ public class Menu {
                                 num = Integer.MAX_VALUE;
                         }
 
-                        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
+                        button.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
                         Preferences.changeFeatureInt(featName, featNum, num);
                         editText.setFocusable(false);
                     }
@@ -825,13 +827,7 @@ public class Menu {
                     }
                 });
 
-                if (overlayRequired) {
-                    AlertDialog dialog = alertName.create(); // display the dialog
-                    Objects.requireNonNull(dialog.getWindow()).setType(Build.VERSION.SDK_INT >= 26 ? 2038 : 2002);
-                    dialog.show();
-                } else {
-                    alertName.show();
-                }
+                showDialog(alertName);
             }
         });
 
@@ -846,7 +842,7 @@ public class Menu {
 
         final Button button = new Button(getContext);
         long num = Preferences.loadPrefLong(featName, featNum);
-        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
+        button.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
         button.setAllCaps(false);
         button.setLayoutParams(layoutParams);
         button.setBackgroundColor(BTN_COLOR);
@@ -898,7 +894,7 @@ public class Menu {
                                 num = Long.MAX_VALUE;
                         }
 
-                        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
+                        button.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + num + "</font>"));
                         Preferences.changeFeatureLong(featName, featNum, num);
 
                         editText.setFocusable(false);
@@ -913,13 +909,7 @@ public class Menu {
                     }
                 });
 
-                if (overlayRequired) {
-                    AlertDialog dialog = alertName.create(); // display the dialog
-                    Objects.requireNonNull(dialog.getWindow()).setType(Build.VERSION.SDK_INT >= 26 ? 2038 : 2002);
-                    dialog.show();
-                } else {
-                    alertName.show();
-                }
+                showDialog(alertName);
             }
         });
 
@@ -935,7 +925,7 @@ public class Menu {
         final Button button = new Button(getContext);
 
         String string = Preferences.loadPrefString(featName, featNum);
-        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + string + "</font>"));
+        button.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + string + "</font>"));
 
         button.setAllCaps(false);
         button.setLayoutParams(layoutParams);
@@ -970,7 +960,7 @@ public class Menu {
                 alertName.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         String str = editText.getText().toString();
-                        button.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + str + "</font>"));
+                        button.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + str + "</font>"));
                         Preferences.changeFeatureString(featName, featNum, str);
                         editText.setFocusable(false);
                     }
@@ -985,13 +975,7 @@ public class Menu {
                 });
 
 
-                if (overlayRequired) {
-                    AlertDialog dialog = alertName.create(); // display the dialog
-                    dialog.getWindow().setType(Build.VERSION.SDK_INT >= 26 ? 2038 : 2002);
-                    dialog.show();
-                } else {
-                    alertName.show();
-                }
+                showDialog(alertName);
             }
         });
 
@@ -1037,7 +1021,7 @@ public class Menu {
             final String finalfeatName = featName, radioName = lists.get(i);
             View.OnClickListener first_radio_listener = new View.OnClickListener() {
                 public void onClick(View v) {
-                    textView.setText(Html.fromHtml(finalfeatName + ": <font color='" + NumberTxtColor + "'>" + radioName));
+                    textView.setText(fromHtml(finalfeatName + ": <font color='" + NumberTxtColor + "'>" + radioName));
                     Preferences.changeFeatureInt(finalfeatName, featNum, radioGroup.indexOfChild(Radioo));
                 }
             };
@@ -1051,7 +1035,7 @@ public class Menu {
 
         int index = Preferences.loadPrefInt(featName, featNum);
         if (index > 0) { //Preventing it to get an index less than 1. below 1 = null = crash
-            textView.setText(Html.fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + lists.get(index - 1)));
+            textView.setText(fromHtml(featName + ": <font color='" + NumberTxtColor + "'>" + lists.get(index - 1)));
             ((RadioButton) radioGroup.getChildAt(index)).setChecked(true);
         }
         linLayout.addView(radioGroup);
@@ -1113,7 +1097,7 @@ public class Menu {
     private void Category(LinearLayout linLayout, String text) {
         TextView textView = new TextView(getContext);
         textView.setBackgroundColor(CategoryBG);
-        textView.setText(Html.fromHtml(text));
+        textView.setText(fromHtml(text));
         textView.setGravity(Gravity.CENTER);
         textView.setTextColor(TEXT_COLOR_2);
         textView.setTypeface(null, Typeface.BOLD);
@@ -1123,7 +1107,7 @@ public class Menu {
 
     private void TextView(LinearLayout linLayout, String text) {
         TextView textView = new TextView(getContext);
-        textView.setText(Html.fromHtml(text));
+        textView.setText(fromHtml(text));
         textView.setTextColor(TEXT_COLOR_2);
         textView.setPadding(10, 5, 10, 5);
         linLayout.addView(textView);
@@ -1136,6 +1120,25 @@ public class Menu {
         wView.setPadding(0, 5, 0, 5);
         wView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         linLayout.addView(wView);
+    }
+
+    //Html.fromHtml(String) is deprecated since N, so route everything through here
+    private static Spanned fromHtml(String html) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        }
+        return Html.fromHtml(html);
+    }
+
+    //Same dialog shown a few times, so keep the overlay window-type handling in one place
+    private void showDialog(AlertDialog.Builder builder) {
+        if (overlayRequired) {
+            AlertDialog dialog = builder.create();
+            Objects.requireNonNull(dialog.getWindow()).setType(Build.VERSION.SDK_INT >= 26 ? 2038 : 2002);
+            dialog.show();
+        } else {
+            builder.show();
+        }
     }
 
     private boolean isViewCollapsed() {

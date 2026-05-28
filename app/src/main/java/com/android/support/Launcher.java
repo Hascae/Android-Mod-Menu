@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.view.View;
 
 public class Launcher extends Service {
@@ -21,7 +22,7 @@ public class Launcher extends Service {
         menu.ShowMenu();
 
         //Create a handler for this Class
-        final Handler handler = new Handler();
+        final Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
                Thread();

@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 public class DialogHelper {
@@ -43,7 +44,7 @@ public class DialogHelper {
     }
 
     private static void startCountdown(final AlertDialog dialog, String CloseBtnTitle, final int seconds) {
-        final Handler handler = new Handler();
+        final Handler handler = new Handler(Looper.getMainLooper());
         final Runnable countdownRunnable = new Runnable() {
             int remainingTime = seconds;
 
