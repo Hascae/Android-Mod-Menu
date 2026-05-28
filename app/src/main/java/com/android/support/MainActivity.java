@@ -15,6 +15,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //Install the crash handler before anything touches the native lib. Loading the lib
+        //happens during Main's static init, so doing it here (in a class that doesn't pull in
+        //the lib) is the only way to log a failure that happens at load time.
+        CrashHandler.init(this);
         /*Thread.setDefaultUncaughtExceptionHandler(
                 new Thread.UncaughtExceptionHandler() {
                     @Override

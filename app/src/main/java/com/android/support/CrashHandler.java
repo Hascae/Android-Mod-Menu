@@ -34,6 +34,9 @@ public final class CrashHandler {
     /// Due to changes in access to application folders and to maintain convenience, the path has been changed to: android/media/PACKAGE/files/LOG_DIR.
     /// This path should be accessible on all devices
     public static void init(final Context context) {
+        if (appContext != null) {
+            return;
+        }
         appContext = context.getApplicationContext();
         defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
 
