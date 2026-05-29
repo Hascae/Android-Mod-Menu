@@ -103,7 +103,7 @@ inline void DobbyPatchWrapper(const char *libName, const char *relative, std::st
         return;
     }
     std::lock_guard<std::mutex> lock(patch_mutex);
-    std::string key = relative;
+    std::string key = std::string(libName) + ":" + relative;
     auto it = pExpress.find(key);
     void* abs = nullptr;
 
