@@ -56,6 +56,10 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -458,6 +462,14 @@ public class Menu {
         LinearLayout llBak = linearLayout;
 
         for (int i = 0; i < listFT.length; i++) {
+            //New JSON format lets a feature name hold underscores or other characters the old
+            //underscore format can't. Anything not starting with '{' falls through to the
+            //original parser below, so existing feature lists keep working unchanged.
+            String raw = listFT[i];
+            if (raw != null && raw.trim().startsWith("{")) {
+                subFeat = jsonFeature(raw, i, subFeat, llBak);
+                continue;
+            }
             boolean switchedOn = false;
             //Log.i("featureList", listFT[i]);
             String feature = listFT[i];
@@ -544,6 +556,96 @@ public class Menu {
                     break;
             }
         }
+    }
+
+    private int jsonFeature(String json, int i, int subFeat, LinearLayout llBak) {
+        try {
+            JSONObject o = new JSONObject(json);
+            String type = o.optString("type", "");
+            LinearLayout layout = o.optBoolean("collapseAdd", false) ? mCollapse : llBak;
+            String name = o.has("name") ? o.optString("name") : o.optString("text");
+            boolean on = o.optBoolean("on", false);
+
+            int featNum;
+            if (o.has("id")) {
+                featNum = o.optInt("id");
+                subFeat++;
+            } else {
+                featNum = i - subFeat;
+            }
+
+            switch (type) {
+                case "Toggle":
+                    Switch(layout, featNum, name, on);
+                    break;
+                case "SeekBar":
+                    SeekBar(layout, featNum, name, o.optInt("min"), o.optInt("max"));
+                    break;
+                case "Button":
+                    Button(layout, featNum, name);
+                    break;
+                case "ButtonOnOff":
+                    ButtonOnOff(layout, featNum, name, on);
+                    break;
+                case "Spinner":
+                    TextView(layout, name);
+                    Spinner(layout, featNum, name, jsonItems(o));
+                    break;
+                case "InputValue":
+                    InputNum(layout, featNum, name, o.optInt("max", 0));
+                    break;
+                case "InputLValue":
+                    InputLNum(layout, featNum, name, o.optLong("max", 0));
+                    break;
+                case "InputText":
+                    InputText(layout, featNum, name);
+                    break;
+                case "CheckBox":
+                    CheckBox(layout, featNum, name, on);
+                    break;
+                case "RadioButton":
+                    RadioButton(layout, featNum, name, jsonItems(o));
+                    break;
+                case "Collapse":
+                    Collapse(layout, name, on);
+                    subFeat++;
+                    break;
+                case "ButtonLink":
+                    ButtonLink(layout, name, o.optString("url"));
+                    subFeat++;
+                    break;
+                case "Category":
+                    Category(layout, name);
+                    subFeat++;
+                    break;
+                case "RichTextView":
+                    TextView(layout, name);
+                    subFeat++;
+                    break;
+                case "RichWebView":
+                    WebTextView(layout, name);
+                    subFeat++;
+                    break;
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Bad feature JSON: " + json, e);
+        }
+        return subFeat;
+    }
+
+    //Items can be a JSON array ["a","b"] or a plain "a,b" string; both become the CSV the
+    //Spinner/RadioButton builders already expect.
+    private String jsonItems(JSONObject o) {
+        JSONArray arr = o.optJSONArray("items");
+        if (arr != null) {
+            StringBuilder sb = new StringBuilder();
+            for (int k = 0; k < arr.length(); k++) {
+                if (k > 0) sb.append(",");
+                sb.append(arr.optString(k));
+            }
+            return sb.toString();
+        }
+        return o.optString("items");
     }
 
     private void Switch(LinearLayout linLayout, final int featNum, final String featName, boolean swiOn) {

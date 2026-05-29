@@ -81,7 +81,15 @@ jobjectArray GetFeatureList(JNIEnv *env, jobject context) {
                       "This is WebView, with REAL HTML support!"
                       "<div style=\"background-color: darkblue; text-align: center;\">Support CSS</div>"
                       "<marquee style=\"color: green; font-weight:bold;\" direction=\"left\" scrollamount=\"5\" behavior=\"scroll\">This is <u>scrollable</u> text</marquee>"
-                      "</body></html>")
+                      "</body></html>"),
+
+            // ---- New JSON feature format ----
+            // Every entry above is the classic underscore string and still works as-is. A feature
+            // can instead be a JSON object, which lets the name hold '_' or other characters the
+            // old format can't. Fields: type, name (or text), id (optional), on, min, max, items
+            // (array or "a,b" string), url, collapseAdd.
+            OBFUSCATE("{\"type\":\"Category\",\"text\":\"JSON format example\"}"),
+            OBFUSCATE("{\"type\":\"Toggle\",\"id\":300,\"name\":\"JSON toggle (name_with_underscores)\",\"on\":true}")
     };
 
     int Total_Feature = (sizeof features / sizeof features[0]);
