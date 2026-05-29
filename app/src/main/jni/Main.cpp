@@ -11,6 +11,11 @@
 #include <fstream>
 #include <iostream>
 #include <dlfcn.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <ucontext.h>
 #include "Includes/Logger.h"
 #include "Includes/obfuscate.h"
 #include "Includes/Utils.hpp"
@@ -274,6 +279,96 @@ void hack_thread() {
 // Functions with `__attribute__((constructor))` are executed immediately when System.loadLibrary("lib_name") is called.
 // If there are multiple such functions at the same time, `constructor(priority)` (the priority is an integer)
 // will determine the execution priority, otherwise the execution order is undefined behavior.
+// ===== Native crash logger (diagnostic, safe to remove once we're done) =====
+// Native signals never reach the Java crash handler, so a crash in the .so leaves no log in
+// crash_logs. This installs early (before lib_main) and dumps the signal, the faulting PC and
+// /proc/self/maps to Android/media/<pkg>/files/native_crash.log so the faulting library can be
+// pinned down. Only async-signal-safe calls are used in the handler.
+static char cl_path[256];
+static char cl_stack[64 * 1024];
+
+static void cl_write(int fd, const char *s) { (void) write(fd, s, strlen(s)); }
+
+static void cl_hex(int fd, unsigned long v) {
+    char buf[2 + sizeof(unsigned long) * 2];
+    char *p = buf + sizeof(buf);
+    const char *h = "0123456789abcdef";
+    if (v == 0) { *--p = '0'; } else { while (v) { *--p = h[v & 0xf]; v >>= 4; } }
+    *--p = 'x';
+    *--p = '0';
+    (void) write(fd, p, (size_t) (buf + sizeof(buf) - p));
+}
+
+static void cl_dec(int fd, long v) {
+    char buf[24];
+    char *p = buf + sizeof(buf);
+    bool neg = v < 0;
+    unsigned long u = neg ? (unsigned long) (-(v + 1)) + 1u : (unsigned long) v;
+    if (u == 0) { *--p = '0'; } else { while (u) { *--p = (char) ('0' + u % 10); u /= 10; } }
+    if (neg) *--p = '-';
+    (void) write(fd, p, (size_t) (buf + sizeof(buf) - p));
+}
+
+static void cl_handler(int sig, siginfo_t *info, void *ucontext) {
+    int fd = open(cl_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd >= 0) {
+        cl_write(fd, "=== NATIVE CRASH ===\nsignal=");
+        cl_dec(fd, sig);
+        cl_write(fd, " code=");
+        cl_dec(fd, info->si_code);
+        cl_write(fd, "\nfault_addr=");
+        cl_hex(fd, (unsigned long) info->si_addr);
+        cl_write(fd, "\ntid=");
+        cl_dec(fd, (long) syscall(SYS_gettid));
+        ucontext_t *uc = (ucontext_t *) ucontext;
+#if defined(__aarch64__)
+        cl_write(fd, "\npc=");
+        cl_hex(fd, (unsigned long) uc->uc_mcontext.pc);
+        cl_write(fd, "\nlr=");
+        cl_hex(fd, (unsigned long) uc->uc_mcontext.regs[30]);
+#elif defined(__arm__)
+        cl_write(fd, "\npc=");
+        cl_hex(fd, (unsigned long) uc->uc_mcontext.arm_pc);
+        cl_write(fd, "\nlr=");
+        cl_hex(fd, (unsigned long) uc->uc_mcontext.arm_lr);
+#endif
+        cl_write(fd, "\n=== /proc/self/maps ===\n");
+        int mfd = open("/proc/self/maps", O_RDONLY);
+        if (mfd >= 0) {
+            char b[1024];
+            ssize_t n;
+            while ((n = read(mfd, b, sizeof(b))) > 0) (void) write(fd, b, (size_t) n);
+            close(mfd);
+        }
+        cl_write(fd, "=== END ===\n");
+        close(fd);
+    }
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
+
+__attribute__((constructor(101), used))
+static void cl_install() {
+    (void) mkdir("/sdcard/Android/media/com.android.support", 0777);
+    (void) mkdir("/sdcard/Android/media/com.android.support/files", 0777);
+    strcpy(cl_path, "/sdcard/Android/media/com.android.support/files/native_crash.log");
+
+    stack_t ss;
+    ss.ss_sp = cl_stack;
+    ss.ss_size = sizeof(cl_stack);
+    ss.ss_flags = 0;
+    sigaltstack(&ss, nullptr);
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = cl_handler;
+    sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    sigemptyset(&sa.sa_mask);
+    int sigs[] = {SIGSEGV, SIGABRT, SIGBUS, SIGILL, SIGFPE, SIGTRAP};
+    for (int i = 0; i < 6; i++) sigaction(sigs[i], &sa, nullptr);
+}
+// ===== end native crash logger =====
+
 __attribute__((constructor))
 void lib_main() {
     // Create a new thread so it does not block the main thread, means the game would not freeze
