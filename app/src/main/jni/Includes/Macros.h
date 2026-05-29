@@ -27,6 +27,11 @@ inline void DobbyHookWrapper(const char *lib, const char *relative, void* hook_f
     void *abs = getAbsoluteAddress(lib, relative);
     // LOGI(OBFUSCATE("Off: 0x%llx, Addr: 0x%llx"), offset, (uintptr_t) abs);
 
+    if (!abs) {
+        LOGE(OBFUSCATE("HOOK FAILED (address not found): %s"), relative);
+        return;
+    }
+
     int res = -1;
     if (original_function != nullptr) {
         res = DobbyHook(abs, (dobby_dummy_func_t)hook_function, (dobby_dummy_func_t*)original_function);
@@ -51,6 +56,10 @@ inline void Detector(void *address, DobbyRegisterContext *ctx) {
 /// an example of a wrapper with a function for detecting execution
 inline void DobbyInstrumentWrapper(const char *lib, const char *relative, const char *name, bool apply) {
     void *abs = getAbsoluteAddress(lib, relative);
+    if (!abs) {
+        LOGE(OBFUSCATE("INST: address not found: %s"), relative);
+        return;
+    }
     if(detecting_functions.count(abs)) {
         if(!apply) {
             int res = DobbyDestroy(abs);

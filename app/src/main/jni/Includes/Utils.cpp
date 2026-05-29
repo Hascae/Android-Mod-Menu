@@ -54,11 +54,20 @@ void* getSymAddress(const char *libraryName, const char *SymName, bool relative)
 }
 
 void* getAbsAddress(const char *libraryName, uintptr_t relativeAddr) {
-    if (!lib_links.count(libraryName)) {
-        lib_links[libraryName] = getLibraryAddress(libraryName);
+    uintptr_t base = lib_links.count(libraryName) ? lib_links[libraryName] : 0;
+    if (base == 0) {
+        base = getLibraryAddress(libraryName);
+        if (base != 0) {
+            lib_links[libraryName] = base;
+        }
     }
-    if (!lib_links.count(libraryName)) return nullptr;
-    return (void*)(lib_links[libraryName] + relativeAddr);
+    //If the library isn't loaded, base stays 0. Returning (0 + offset) hands back a bogus low
+    //address, and patching/hooking it crashes (e.g. applying a mod before the game lib loads).
+    //Return null so callers skip it instead.
+    if (base == 0) {
+        return nullptr;
+    }
+    return (void*)(base + relativeAddr);
 }
 
 void* getRelativeAddress(const char *libraryName, const char *rootOffset, const char *addOffset) {
