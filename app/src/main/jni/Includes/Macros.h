@@ -98,6 +98,10 @@ struct DobbyPatchInfo {
 inline std::map<std::string, DobbyPatchInfo> pExpress;
 /// Dobby-Kitty patch implementation
 inline void DobbyPatchWrapper(const char *libName, const char *relative, std::string data, bool apply) {
+    if (!relative) {
+        LOGE(OBFUSCATE("PATCH: null target address"));
+        return;
+    }
     std::lock_guard<std::mutex> lock(patch_mutex);
     std::string key = relative;
     auto it = pExpress.find(key);
@@ -257,7 +261,12 @@ void KittyPatchWrapper(const char *libName, const char *relative, std::string da
 
 /// Relative patches allow you to speed up patch creation if you are sure that the offsets within methods rarely change
 inline void PatchRelativeOffset(const char *libName, const char *rootOffset, const char *addOffset, std::string data, bool apply) {
-    DobbyPatchWrapper(libName, (char *) getRelativeAddress(libName, rootOffset, addOffset), std::move(data), apply);
+    void *addr = getRelativeAddress(libName, rootOffset, addOffset);
+    if (!addr) {
+        LOGE(OBFUSCATE("relative patch: address not found: %s"), rootOffset);
+        return;
+    }
+    DobbyPatchWrapper(libName, (char *) addr, std::move(data), apply);
     // KittyPatchWrapper(libName, (char *) getRelativeAddress(libName, rootOffset, addOffset), std::move(data), apply);
 }
 
