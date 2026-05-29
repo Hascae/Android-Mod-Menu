@@ -40,11 +40,14 @@ public class Launcher extends Service {
     private boolean isNotInGame() {
         ActivityManager.RunningAppProcessInfo runningAppProcessInfo = new ActivityManager.RunningAppProcessInfo();
         ActivityManager.getMyMemoryState(runningAppProcessInfo);
-        return runningAppProcessInfo.importance != 100;
+        return runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
     }
 
     private void Thread() {
-        if (isNotInGame()) {
+        //Only hide the menu when we're actually inside a game (the game lib is loaded) and that
+        //game has gone to the background. In standalone there is no game lib, so the old check
+        //hid our own overlay about a second after it appeared and the menu couldn't be used.
+        if (menu.IsGameLibLoaded() && isNotInGame()) {
             menu.setVisibility(View.INVISIBLE);
         } else {
             menu.setVisibility(View.VISIBLE);
