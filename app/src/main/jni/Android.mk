@@ -39,6 +39,7 @@ LOCAL_SRC_FILES := Main.cpp \
     Menu/Setup.cpp \
     ESP/Esp.cpp \
     ESP/SampleSource.cpp \
+    ESP/UnitySource.cpp \
     Includes/Utils.cpp \
 	KittyMemory/KittyAsm.cpp \
 	KittyMemory/KittyIOFile.cpp \

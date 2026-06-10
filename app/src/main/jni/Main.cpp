@@ -332,10 +332,12 @@ void hack_thread() {
     //Put your code here if you want the code to be compiled for armv7 only
 #endif
 
-    // Wire the ESP to its data source. The bundled template draws nothing until
-    // you implement it (ESP/SampleSource.cpp); swap in your own IEntitySource
-    // here once you've found the camera matrix and entity list for your game.
-    esp::installSampleSource();
+    // Wire the ESP to its data source. The Unity adapter pulls the camera matrix
+    // straight from il2cpp, so projection works with no offsets; you only fill in
+    // its collect() with your game's entity list (ESP/UnitySource.cpp). For a
+    // non-Unity target, implement IEntitySource yourself and install it instead
+    // (see the ESP/SampleSource.cpp template and esp::installSampleSource()).
+    esp::installUnitySource();
 
     LOGI(OBFUSCATE("Done"));
 }

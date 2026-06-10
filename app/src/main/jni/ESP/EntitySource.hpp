@@ -95,6 +95,12 @@ IEntitySource *entitySource();
 // nothing on its own; it exists as a compile-checked starting point to copy.
 void installSampleSource();
 
+// Registers the Unity (il2cpp) adapter (see UnitySource.cpp). It obtains the
+// view-projection matrix straight from the engine, so projection works on any
+// il2cpp Unity game with no offsets; only its collect() (the entity list) is
+// left per-game.
+void installUnitySource();
+
 }  // namespace esp
 
 #endif  // ESP_ENTITYSOURCE_HPP

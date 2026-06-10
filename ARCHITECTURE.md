@@ -288,7 +288,8 @@ ESPView.java            drawing layer   — transparent click-through overlay, C
 ESP/Esp.cpp             manager + JNI   — projects entities, packs a draw list
 ESP/EspMath.hpp         projection      — worldToScreen, engine-agnostic
 ESP/EntitySource.hpp    adapter API     — IEntitySource: matrix + entity list
-ESP/SampleSource.cpp    adapter (stub)  — the one file you edit per game
+ESP/UnitySource.cpp     adapter (Unity) — borrows the engine's VP matrix (default)
+ESP/SampleSource.cpp    adapter (stub)  — non-Unity starting point to copy
 ```
 
 ### Data flow per frame
@@ -325,11 +326,22 @@ lock on.
 
 ### Adding a game
 
-Implement `IEntitySource` (copy `SampleSource.cpp`): fill `viewProjection()`
-with the camera matrix and `collect()` with the entity list, then register it
-(`esp::installSampleSource()` is called at the end of `hack_thread`). On Unity
-the version-resilient route for the matrix is to call the engine's own
-`Camera.WorldToScreenPoint` via il2cpp rather than chasing a matrix address.
+`hack_thread` installs the Unity adapter (`esp::installUnitySource()`) by
+default. `UnitySource.cpp` resolves the il2cpp runtime by symbol name and reads
+`Camera.main.projectionMatrix * worldToCameraMatrix` straight from the engine —
+so the projection works on any il2cpp Unity title with **no offsets**, and the
+matrix can't drift out of date between game versions. The only per-game work
+left is `collect()`: append your title's entity list (positions, health, team,
+name).
+
+For a non-Unity target, copy `SampleSource.cpp`, implement both
+`viewProjection()` and `collect()`, and call `esp::installSampleSource()` (or
+your own installer) from `hack_thread` instead.
+
+Threading: the Unity adapter reads the camera matrix from the overlay's UI
+thread and attaches that thread to il2cpp. Reads are tolerated cross-thread; a
+hardened build would hook a per-frame Unity method and snapshot the matrix into
+an atomic the overlay reads.
 
 ### Menu controls
 
