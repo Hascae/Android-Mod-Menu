@@ -188,10 +188,18 @@ public:
 
     void collect(std::vector<Entity> &out) override {
         (void) out;
-        // TODO(per game): append the entities to draw. This is the only piece
-        // the Unity adapter can't do generically — you supply the actor list
-        // and the field offsets for your title. Per target:
+        // ===================================================================
+        // ||  PLACEHOLDER / STUB — NOT EXECUTABLE GAME LOGIC.              ||
+        // ||  This method INTENTIONALLY does nothing and pushes NO         ||
+        // ||  entities. It is an empty hook you must fill in per game.     ||
+        // ||  The code in the comment block below is illustrative PSEUDO-  ||
+        // ||  CODE only: readVec3 / readFloat / kPosOffset / kHpOffset etc ||
+        // ||  DO NOT EXIST and the offsets are made-up examples. Until you ||
+        // ||  implement this, the ESP draws nothing (the matrix half above ||
+        // ||  IS real; only this entity list is a stub).                   ||
+        // ===================================================================
         //
+        // EXAMPLE PSEUDO-CODE (does not compile as-is, fill with your game's data):
         //   for (each actor in the game's entity list) {
         //       Entity e;
         //       e.feet = readVec3(actor + kPosOffset);

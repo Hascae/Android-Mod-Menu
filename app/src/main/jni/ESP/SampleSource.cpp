@@ -32,6 +32,11 @@ public:
     // you do read a raw matrix, hand it back as-is and describe its layout in
     // projectionConfig() — don't pre-transpose here.
     bool viewProjection(Mat4 &out) override {
+        // ===================================================================
+        // ||  PLACEHOLDER / STUB — returns NO matrix on purpose.          ||
+        // ||  `return false` tells the manager to skip the frame, so this ||
+        // ||  template never draws. Replace with your game's real matrix. ||
+        // ===================================================================
         out = identity();
         return false;  // not wired up yet => the manager skips the frame
     }
@@ -43,9 +48,15 @@ public:
     // defaults — the manager skips the bars/labels it has no data for.
     void collect(std::vector<Entity> &out) override {
         (void) out;
-        // Example shape of what a real adapter pushes (left commented so the
-        // template draws nothing by default):
+        // ===================================================================
+        // ||  PLACEHOLDER / STUB — NOT EXECUTABLE GAME LOGIC.              ||
+        // ||  This method INTENTIONALLY pushes NO entities. The lines      ||
+        // ||  below are illustrative PSEUDO-CODE only: readVec3 /          ||
+        // ||  readFloat / kPosOffset / kHpOffset etc DO NOT EXIST and the  ||
+        // ||  offsets are made-up examples. Fill this in per game.         ||
+        // ===================================================================
         //
+        // EXAMPLE PSEUDO-CODE (does not compile as-is):
         // Entity e;
         // e.feet = readVec3(actor + kPosOffset);
         // e.head = e.feet; e.head.y += 1.8f;          // approximate height
