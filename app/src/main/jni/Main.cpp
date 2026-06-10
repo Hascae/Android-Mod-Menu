@@ -22,6 +22,8 @@
 #include "Menu/Menu.hpp"
 #include "Menu/Jni.hpp"
 #include "Includes/Macros.h"
+#include "ESP/Esp.hpp"
+#include "ESP/EntitySource.hpp"
 #include "dobby.h"
 
 std::atomic<int> scoreMul{1}, coinsMul{1};
@@ -89,7 +91,24 @@ jobjectArray GetFeatureList(JNIEnv *env, jobject context) {
             // old format can't. Fields: type, name (or text), id (optional), on, min, max, items
             // (array or "a,b" string), url, collapseAdd.
             OBFUSCATE("{\"type\":\"Category\",\"text\":\"JSON format example\"}"),
-            OBFUSCATE("{\"type\":\"Toggle\",\"id\":300,\"name\":\"JSON toggle (name_with_underscores)\",\"on\":true}")
+            OBFUSCATE("{\"type\":\"Toggle\",\"id\":300,\"name\":\"JSON toggle (name_with_underscores)\",\"on\":true}"),
+
+            // ---- ESP overlay ----
+            // Generic, engine-independent box/tracer/health/name ESP. The drawing
+            // and projection are wired up already; what each title still needs is a
+            // data source (see ESP/SampleSource.cpp). Explicit IDs (500+) keep these
+            // out of the automatic numbering used by the features above.
+            OBFUSCATE("Category_ESP"),
+            OBFUSCATE("500_Toggle_ESP enabled"),
+            OBFUSCATE("501_Toggle_True_Boxes"),
+            OBFUSCATE("502_Toggle_Corner box style"),
+            OBFUSCATE("503_Toggle_Tracers"),
+            OBFUSCATE("504_Toggle_True_Health bars"),
+            OBFUSCATE("505_Toggle_True_Names"),
+            OBFUSCATE("506_Toggle_Distance text"),
+            OBFUSCATE("507_SeekBar_Max distance (0=off)_0_500"),
+            OBFUSCATE("509_SeekBar_Line thickness_1_6"),
+            OBFUSCATE("508_Spinner_Tracer origin_Bottom,Top,Center")
     };
 
     int Total_Feature = (sizeof features / sizeof features[0]);
@@ -202,6 +221,38 @@ void Changes(JNIEnv *env, jclass clazz, jobject obj, jint featNum, jstring featN
                 INST(targetLibName, "_example__sym", "AnyNameForDetect3", false);
             }
             break;
+
+        // ---- ESP overlay controls (IDs assigned in GetFeatureList) ----
+        case 500:
+            esp::config().enabled.store(boolean);
+            break;
+        case 501:
+            esp::config().boxes.store(boolean);
+            break;
+        case 502:
+            esp::config().cornerBox.store(boolean);
+            break;
+        case 503:
+            esp::config().tracers.store(boolean);
+            break;
+        case 504:
+            esp::config().healthBars.store(boolean);
+            break;
+        case 505:
+            esp::config().names.store(boolean);
+            break;
+        case 506:
+            esp::config().distances.store(boolean);
+            break;
+        case 507:
+            esp::config().maxDistance.store(value);
+            break;
+        case 508:
+            esp::config().tracerOrigin.store(value);
+            break;
+        case 509:
+            esp::config().lineThickness.store(value);
+            break;
         default:
             break;
     }
@@ -280,6 +331,11 @@ void hack_thread() {
 #elif defined(__arm__)
     //Put your code here if you want the code to be compiled for armv7 only
 #endif
+
+    // Wire the ESP to its data source. The bundled template draws nothing until
+    // you implement it (ESP/SampleSource.cpp); swap in your own IEntitySource
+    // here once you've found the camera matrix and entity list for your game.
+    esp::installSampleSource();
 
     LOGI(OBFUSCATE("Done"));
 }

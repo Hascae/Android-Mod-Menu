@@ -1,6 +1,7 @@
 #include "Includes/obfuscate.h"
 #include "Menu/Menu.hpp"
 #include "Utils.hpp"
+#include "ESP/Esp.hpp"
 
 int RegisterMenu(JNIEnv *env) {
     JNINativeMethod methods[] = {
@@ -62,6 +63,8 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (RegisterPreferences(env) != 0)
         return JNI_ERR;
     if (RegisterMain(env) != 0)
+        return JNI_ERR;
+    if (esp::RegisterESP(env) != 0)
         return JNI_ERR;
     return JNI_VERSION_1_6;
 }

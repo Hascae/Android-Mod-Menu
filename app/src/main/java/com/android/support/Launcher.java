@@ -11,11 +11,17 @@ import android.view.View;
 public class Launcher extends Service {
 
     Menu menu;
+    ESPView espView;
 
     //When this Class is called the code in this function will be executed
     @Override
     public void onCreate() {
         super.onCreate();
+
+        //Add the ESP overlay first so the click-through layer sits underneath the
+        //touchable mod menu that is added right after.
+        espView = new ESPView(this);
+        espView.attach();
 
         menu = new Menu(this);
         menu.SetWindowManagerWindowService();
@@ -57,6 +63,9 @@ public class Launcher extends Service {
     //Destroy our View
     public void onDestroy() {
         super.onDestroy();
+        if (espView != null) {
+            espView.detach();
+        }
         menu.onDestroy();
     }
 

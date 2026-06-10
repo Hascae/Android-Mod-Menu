@@ -278,6 +278,67 @@ After writing, the handler resets the signal to `SIG_DFL` and re-raises it so th
 
 ---
 
+## ESP overlay
+
+A generic, engine-independent box / tracer / health / name ESP. It is split
+into three layers so that targeting a new game touches exactly one of them.
+
+```
+ESPView.java            drawing layer   — transparent click-through overlay, Canvas
+ESP/Esp.cpp             manager + JNI   — projects entities, packs a draw list
+ESP/EspMath.hpp         projection      — worldToScreen, engine-agnostic
+ESP/EntitySource.hpp    adapter API     — IEntitySource: matrix + entity list
+ESP/SampleSource.cpp    adapter (stub)  — the one file you edit per game
+```
+
+### Data flow per frame
+
+```
+ESPView.doFrame (Choreographer, vsync)
+  └─ onDraw
+       ├─ nativeBuildFrame(w, h)        # Esp.cpp: ask the source, project, cull, pack
+       │    ├─ IEntitySource::viewProjection()   → camera matrix
+       │    ├─ IEntitySource::collect()          → entities (world coords)
+       │    └─ worldToScreen() per entity        → screen pixels + cull
+       ├─ nativeLabelText() / nativeLabelMeta()  # names / distances
+       └─ Canvas draws boxes, tracers, bars, text
+```
+
+The View is a dumb renderer: it gets a flat `int[]` of shape records
+(`[type, x1, y1, x2, y2, colorARGB]`) plus a parallel label list, and paints
+them. All geometry and culling are native, so the same logic drives every game
+and the overlay never changes.
+
+### Projection conventions
+
+`worldToScreen` is fixed maths; what differs per engine are *conventions*,
+exposed as knobs on `ProjectionConfig`:
+
+| Field | Meaning | Symptom if wrong |
+|---|---|---|
+| `columnMajor` | transpose the matrix before use (Unity is column-major) | ESP mirrored / transposed |
+| `flipY` | NDC (+Y up) → Canvas (+Y down) | ESP upside-down |
+| `minClipW` | cull points at/behind the camera plane | ghosts mirror from behind |
+
+Getting these three to line up — not float precision — is what makes the boxes
+lock on.
+
+### Adding a game
+
+Implement `IEntitySource` (copy `SampleSource.cpp`): fill `viewProjection()`
+with the camera matrix and `collect()` with the entity list, then register it
+(`esp::installSampleSource()` is called at the end of `hack_thread`). On Unity
+the version-resilient route for the matrix is to call the engine's own
+`Camera.WorldToScreenPoint` via il2cpp rather than chasing a matrix address.
+
+### Menu controls
+
+Feature IDs 500–509 in `GetFeatureList` (Main.cpp) toggle the ESP; `Changes()`
+writes them into the atomic `esp::config()`. The explicit IDs keep these items
+out of the automatic numbering used by the mod features above them.
+
+---
+
 ## Adding a new feature
 
 1. Add a string to `GetFeatureList` in `Main.cpp`:
